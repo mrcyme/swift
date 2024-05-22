@@ -8,7 +8,7 @@ THREE.Object3D.DefaultUp.set(0, 0, 1);
 // import * as tr from './vendor/three.module.js'
 
 import {OrbitControls} from './vendor/examples/jsm/controls/OrbitControls.js'
-import {Shape, FPS, SimTime, Slider, Button, Label, Select, Checkbox, Radio} from './lib.js'
+import {Compound, Shape, FPS, SimTime, Slider, Button, Label, Select, Checkbox, Radio} from './lib.js'
 import { STLLoader } from './vendor/examples/jsm/loaders/STLLoader.js'
 // import { start } from 'repl';
 
@@ -19,7 +19,7 @@ let camera, scene, renderer, controls;
 
 // Array of all the robots in the scene
 let agents = [];
-let objects = [];
+let compounds = [];
 let shapes = [];
 let custom_elements = [];
 
@@ -200,17 +200,22 @@ ws.onmessage = function (event) {
 	let func = eventdata[0]
 	let data = eventdata[1]
 	if (func === 'shape') {
-		//let compound = new Compound(scene);
+		let compound = new Compound(scene);
 		// Assuming data is a list of shapes
 		for (let shapeData of data) {
 			// Create a new shape object based on the shape data
-			//compound.add_shape(shapeData);
-			let shape = new Shape(scene, shapeData);
-			shape.id = shapes.length; // Set the shape's id to the current length of the shapes array
-			//compound.push(shape); // Add the shape to the shapes array
+			
+			compound.add_shape(shapeData);
+			//let shape = new Shape(scene, shapeData);
+			 // Set the shape's id to the current length of the shapes array
+			 // Add the shape to the shapes array
 		}
+		
+		compound.id = compounds.length;
+		compounds.push(compound);
+		console.log("Compound: ", compound)
 		// Send a confirmation message back to the server
-		ws.send(shapes.length - data.length); // Send the index of the first newly added shape
+		ws.send(compound.id); // Send the index of the first newly added shape
 	
 	} else if (func === 'shape_mounted') {
 		let id = 1;
@@ -226,7 +231,8 @@ ws.onmessage = function (event) {
 			let id = shapeData[0];
 			let poses = shapeData[1];
 			console.log("id: ", id)
-			shapes[id].set_poses(poses[0]);
+			console.log("poses: ", poses)
+			compounds[id].set_poses(poses);
 		}
 		let jsonString = JSON.stringify([]);
 		ws.send(jsonString);

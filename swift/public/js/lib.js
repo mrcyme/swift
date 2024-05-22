@@ -451,7 +451,7 @@ class Shape {
     }
   
     set_pose(pose) {
-      console.log("setting pose", pose.q);
+      console.log("setting pose", pose);
       let t = pose.t;
       let q = pose.q;
       console.log(q);
@@ -471,7 +471,7 @@ class Shape {
     }
   }
   
-  class Compound {
+class Compound {
     constructor(scene) {
       this.shapes = [];
       this.scene = scene;
@@ -885,4 +885,4 @@ class Radio {
 
 
 
-export {Robot, Shape, FPS, SimTime, Slider, Button, Label, Select, Checkbox, Radio};
+export {Robot, Compound, Shape, FPS, SimTime, Slider, Button, Label, Select, Checkbox, Radio};
