@@ -218,7 +218,6 @@ class SwiftRtc:
                         await self.as_inq.put(message)
                 else:
                     print("Recieved Unknown RTC Message")
-                    print(message)
 
             while self.connected:
                 if channel.bufferedAmount < 10000:
@@ -298,7 +297,6 @@ class SwiftSocket:
                 started = True
             except OSError:
                 port += 1
-        print(port)
         self.inq.put(port)
         self.loop.run_forever()
 
@@ -325,9 +323,7 @@ class SwiftSocket:
 
     async def expect_message(self, websocket, expected):
         if expected:
-            print("Expecting Message")
             recieved = await websocket.recv()
-            print("Recieved Message")
             self.inq.put(recieved)
 
     async def producer(self):
@@ -335,14 +331,21 @@ class SwiftSocket:
         return data
 
 
+import http.server
+import socketserver
+import json
+import os
+from pathlib import Path
+import urllib.parse
+from http import HTTPStatus
+
 class SwiftServer:
     def __init__(self, outq, inq, socket_port, run, verbose=False, custom_root=None):
         server_port = 52000
         self.inq = inq
         self.run = run
 
-        root_dir = Path(sw.__file__).parent / "public"
-        print(root_dir)
+        root_dir = Path(__file__).parent / "public"  # Ensure this points to your 'public' directory
 
         class MyHttpRequestHandler(http.server.SimpleHTTPRequestHandler):
             def __init__(self, *args, **kwargs):
@@ -378,23 +381,16 @@ class SwiftServer:
             def do_GET(self):
                 if self.path == "/":
                     self.send_response(301)
-
                     self.send_header(
                         "Location",
-                        "http://localhost:"
-                        + str(server_port)
-                        + "/?"
-                        + str(socket_port),
+                        f"http://localhost:{server_port}/?{socket_port}",
                     )
-
                     self.end_headers()
                     return
-                elif self.path == "/?" + str(socket_port):
+                elif self.path == f"/?{socket_port}":
                     self.path = "index.html"
                 elif self.path.startswith("/retrieve/"):
-                    print(f"Retrieving file: {self.path[10:]}")
                     self.path = urllib.parse.unquote(self.path[9:])
-                    print(self.path)
                     self.send_file_via_real_path()
                     return
 
@@ -404,9 +400,13 @@ class SwiftServer:
                     http.server.SimpleHTTPRequestHandler.do_GET(self)
                 except BrokenPipeError:
                     print("Broken Pipe Error")
-                    # After killing this error will pop up but it's of no use
-                    # to the user
                     pass
+
+            def end_headers(self):
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+                self.send_header("Access-Control-Allow-Headers", "Content-Type")
+                super(MyHttpRequestHandler, self).end_headers()
 
             def send_file_via_real_path(self):
                 try:
@@ -423,6 +423,7 @@ class SwiftServer:
                     self.send_header(
                         "Last-Modified", self.date_time_string(fs.st_mtime)
                     )
+                    self.send_header("Access-Control-Allow-Origin", "*")
                     self.end_headers()
                     self.copyfile(f, self.wfile)
                 finally:
@@ -435,9 +436,9 @@ class SwiftServer:
         while not connected and server_port < 62000:
             try:
                 with socketserver.TCPServer(("", server_port), Handler) as httpd:
+                    print("yoo")
                     self.inq.put(server_port)
                     connected = True
-
                     httpd.serve_forever()
             except OSError:
                 server_port += 1

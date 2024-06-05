@@ -451,10 +451,8 @@ class Shape {
     }
   
     set_pose(pose) {
-      console.log("setting pose", pose);
       let t = pose.t;
       let q = pose.q;
-      console.log(q);
       let quat = new THREE.Quaternion(q[0], q[1], q[2], q[3]);
       try {
         this.ob.mesh.position.set(t[0], t[1], t[2]);

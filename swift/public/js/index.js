@@ -9,7 +9,6 @@ THREE.Object3D.DefaultUp.set(0, 0, 1);
 
 import {OrbitControls} from './vendor/examples/jsm/controls/OrbitControls.js'
 import {Compound, Shape, FPS, SimTime, Slider, Button, Label, Select, Checkbox, Radio} from './lib.js'
-import { STLLoader } from './vendor/examples/jsm/loaders/STLLoader.js'
 // import { start } from 'repl';
 
 let fps = new FPS(document.getElementById('fps'));
@@ -26,8 +25,10 @@ let custom_elements = [];
 let connected = false;
 
 // Open the connection to python
+var url = window.location.href;
+let port = url.split('?')[1];
 //let port = parseInt(window.location.pathname.slice(1));
-let port = 53000;
+//let port = 53000;
 let ws = new WebSocket("ws://localhost:" + port + "/")
 
 let recorder = null;
@@ -195,7 +196,6 @@ function stopRecording() {
 
 
 ws.onmessage = function (event) {
-	console.log(event.data)
 	let eventdata = JSON.parse(event.data)
 	let func = eventdata[0]
 	let data = eventdata[1]
